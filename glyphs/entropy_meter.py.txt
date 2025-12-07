@@ -1,0 +1,7 @@
+class EntropyMeterGlyph:
+    def __init__(self, pattern):
+        self.pattern = pattern
+
+    def render(self, engine):
+        e = getattr(self.pattern, "entropy", 0)
+        print(f"[Entropy] {e:.4f}")

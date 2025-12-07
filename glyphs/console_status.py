@@ -1,12 +1,12 @@
 class ConsoleStatusGlyph:
-    def __init__(self, every_n_steps=1):
-        self.every_n_steps = every_n_steps
-        self.counter = 0
-        self.universe = None
+    """
+    Placeholder glyph hook that could render status; here it only tracks invocations.
+    """
 
-    def bind_universe(self, universe):
-        self.universe = universe
+    def __init__(self, every_n_steps: int = 1):
+        self.every_n_steps = max(1, int(every_n_steps))
+        self.invocations = 0
 
-    def render(self, engine):
-        self.counter += 1
-        # No print to avoid test noise
+    def render(self, engine) -> None:
+        self.invocations += 1
+        # Suppress console output to keep test noise low.
