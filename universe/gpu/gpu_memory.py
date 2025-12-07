@@ -5,6 +5,9 @@ try:
 except ImportError:  # pragma: no cover - environment may not have CUDA
     cuda = None
 
+from universe.components.position import Position
+from universe.components.velocity import Velocity
+
 
 class GPUMemory:
     """
@@ -43,11 +46,11 @@ class GPUMemory:
         host_radius = np.ones(self.max, dtype=np.float32)
         host_mass = np.ones(self.max, dtype=np.float32)
 
-        for i, (eid, ent) in enumerate(entities.items()):
+        for i, (_, ent) in enumerate(entities.items()):
             if i >= self.max:
                 break
-            pos = ent.get_component("Position") if hasattr(ent, "get_component") else ent.get("Position")
-            vel = ent.get_component("Velocity") if hasattr(ent, "get_component") else ent.get("Velocity")
+            pos = ent.get_component(Position) if hasattr(ent, "get_component") else ent.get("Position")
+            vel = ent.get_component(Velocity) if hasattr(ent, "get_component") else ent.get("Velocity")
 
             if pos:
                 host_pos_x[i] = getattr(pos, "x", 0.0)
