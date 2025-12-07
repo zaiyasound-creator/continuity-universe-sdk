@@ -29,6 +29,8 @@ class GPUMemory:
         self.vel_y = cuda.device_array(self.max, dtype=np.float32)
         self.radius = cuda.device_array(self.max, dtype=np.float32)
         self.mass = cuda.device_array(self.max, dtype=np.float32)
+        self.force_x = cuda.device_array(self.max, dtype=np.float32)
+        self.force_y = cuda.device_array(self.max, dtype=np.float32)
 
         self.count = 0
 
@@ -67,3 +69,6 @@ class GPUMemory:
         self.vel_y.copy_to_device(host_vel_y)
         self.radius.copy_to_device(host_radius)
         self.mass.copy_to_device(host_mass)
+        # Clear forces
+        self.force_x.copy_to_device(np.zeros(self.max, dtype=np.float32))
+        self.force_y.copy_to_device(np.zeros(self.max, dtype=np.float32))
