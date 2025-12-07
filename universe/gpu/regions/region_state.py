@@ -30,10 +30,10 @@ class RegionState:
             self.gpu = None
             self.scheduler = None
 
-    def step(self, dt: float):
+    def step(self, dt: float, stream=None):
         if self._gpu_available and self.gpu and self.scheduler:
             self.gpu.upload(self.entities)
-            self.scheduler.step(dt)
+            self.scheduler.step(dt, stream=stream)
             self._sync_back()
         else:
             # CPU fallback: simple integration

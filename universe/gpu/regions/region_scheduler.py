@@ -20,19 +20,15 @@ class RegionScheduler:
             gpu_context.assign_stream(region)
 
     def step(self, dt: float):
-        # Launch all regions; if CUDA streams exist, use them, else serial
+        # Launch all regions; if CUDA streams exist, pass them to the region step.
         if cuda is not None:
-            # Use streams to overlap; region.step uses default stream so this is best-effort
             for region in self.region_map.values():
-                stream = region.cuda_stream
-                if stream is None:
-                    region.step(dt)
-                else:
-                    stream.run(region.step, dt) if hasattr(stream, "run") else region.step(dt)
+                stream = getattr(region, "cuda_stream", None)
+                region.step(dt, stream=stream)
             self.gpu_context.wait_all()
         else:
             for region in self.region_map.values():
-                region.step(dt)
+                region.step(dt, stream=None)
 
         self._resolve_region_transfers()
 

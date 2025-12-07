@@ -16,7 +16,7 @@ class GPUSchedulerV8:
         self.gpu = gpu_memory
         self.toi = cuda.device_array(self.gpu.max, dtype=self.gpu.pos_x.dtype)
 
-    def step(self, dt: float):
+    def step(self, dt: float, stream=None):
         n = self.gpu.count
         threads = 256
         blocks = (n + threads - 1) // threads
@@ -25,7 +25,7 @@ class GPUSchedulerV8:
             return
 
         # Force accumulation
-        apply_forces[blocks, threads](
+        apply_forces[blocks, threads, stream](
             self.gpu.pos_x,
             self.gpu.pos_y,
             self.gpu.force_x,
@@ -34,7 +34,7 @@ class GPUSchedulerV8:
         )
 
         # Integrate velocity using forces
-        integrate[blocks, threads](
+        integrate[blocks, threads, stream](
             self.gpu.vel_x,
             self.gpu.vel_y,
             self.gpu.force_x,
@@ -45,7 +45,7 @@ class GPUSchedulerV8:
         )
 
         # Swept TOI for continuous collision
-        swept_circle[blocks, threads](
+        swept_circle[blocks, threads, stream](
             self.gpu.pos_x,
             self.gpu.pos_y,
             self.gpu.vel_x,
@@ -56,7 +56,7 @@ class GPUSchedulerV8:
         )
 
         # Impulse resolution
-        apply_impulse[blocks, threads](
+        apply_impulse[blocks, threads, stream](
             self.gpu.pos_x,
             self.gpu.pos_y,
             self.gpu.vel_x,
@@ -68,7 +68,7 @@ class GPUSchedulerV8:
         )
 
         # Final positional integration
-        physics_step[blocks, threads](
+        physics_step[blocks, threads, stream](
             self.gpu.pos_x,
             self.gpu.pos_y,
             self.gpu.vel_x,
@@ -77,4 +77,7 @@ class GPUSchedulerV8:
             n,
         )
 
-        cuda.synchronize()
+        if stream is None:
+            cuda.synchronize()
+        else:
+            stream.synchronize()
