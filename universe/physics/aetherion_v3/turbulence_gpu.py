@@ -3,6 +3,8 @@ try:
 except Exception:  # pragma: no cover
     cuda = None
 
+from universe.physics.aetherion_v3.turbulence_cpu import TurbulenceCPU
+
 
 if cuda:
 
@@ -24,12 +26,19 @@ if cuda:
 
 
 class TurbulenceGPU:
-    def __init__(self, viscosity: float = 0.001):
-        if cuda is None:
-            raise RuntimeError("CUDA/numba is required for TurbulenceGPU")
+    """
+    GPU turbulence solver with automatic CPU fallback when CUDA is unavailable.
+    """
+
+    def __init__(self, viscosity: float = 0.001, cpu_fallback=None):
         self.visc = viscosity
+        self.gpu_enabled = cuda is not None
+        self.cpu_fallback = cpu_fallback or TurbulenceCPU(viscosity=viscosity)
 
     def step(self, vx, vy, dt: float):
+        if not self.gpu_enabled:
+            return self.cpu_fallback.step(vx, vy, dt)
+
         h, w = vx.shape
         threads = (16, 16)
         blocks = ((w + 15) // 16, (h + 15) // 16)

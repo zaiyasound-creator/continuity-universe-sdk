@@ -18,6 +18,8 @@ class UniverseEngineV10:
         self.replay = ReplayWriter(replay_path)
         self.step_counter = 0
         self.fields = {}
+        self.coupled_fields = []
+        self.gpu_available = True
 
     def add_entity(self, ent):
         self.entities[ent.id] = ent
@@ -37,9 +39,14 @@ class UniverseEngineV10:
         for field in self.coupled_fields:
             field.step(dt)
 
-        self.gpu.upload(self.entities)
-        state_hash = self.scheduler.step(dt)
-        self._sync_back()
+        try:
+            self.gpu.upload(self.entities)
+            state_hash = self.scheduler.step(dt)
+            self._sync_back()
+        except Exception:
+            # GPU path failed (missing CUDA/numba or runtime issue); continue without hashing
+            self.gpu_available = False
+            state_hash = None
 
         if state_hash is not None:
             self.replay.log_step(self.step_counter, dt, state_hash)

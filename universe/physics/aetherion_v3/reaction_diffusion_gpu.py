@@ -2,7 +2,10 @@ try:
     from numba import cuda
 except Exception:  # pragma: no cover
     cuda = None
+
 import math
+
+from universe.physics.aetherion_v3.reaction_diffusion_cpu import ReactionDiffusionCPU
 
 
 if cuda:
@@ -38,15 +41,22 @@ if cuda:
 
 
 class ReactionDiffusionGPU:
-    def __init__(self, Du: float = 0.2, Dv: float = 0.1, F: float = 0.04, k: float = 0.06):
-        if cuda is None:
-            raise RuntimeError("CUDA/numba is required for ReactionDiffusionGPU")
+    """
+    GPU RD solver with automatic CPU fallback when CUDA is unavailable.
+    """
+
+    def __init__(self, Du: float = 0.2, Dv: float = 0.1, F: float = 0.04, k: float = 0.06, cpu_fallback=None):
         self.Du = Du
         self.Dv = Dv
         self.F = F
         self.k = k
+        self.gpu_enabled = cuda is not None
+        self.cpu_fallback = cpu_fallback or ReactionDiffusionCPU(Du=Du, Dv=Dv, F=F, k=k)
 
     def step(self, U, V, dt: float):
+        if not self.gpu_enabled:
+            return self.cpu_fallback.step(U, V, dt)
+
         h, w = U.shape
         threads = (16, 16)
         blocks = ((w + 15) // 16, (h + 15) // 16)

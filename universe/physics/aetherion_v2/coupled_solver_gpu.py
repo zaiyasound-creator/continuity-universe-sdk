@@ -4,6 +4,8 @@ except Exception:  # pragma: no cover - environment may lack CUDA
     cuda = None
 import math
 
+from universe.physics.aetherion_v2.coupled_solver_cpu import CoupledAetherSolverCPU
+
 
 if cuda:
 
@@ -57,18 +59,23 @@ if cuda:
 
 class CoupledAetherSolverGPU:
     """
-    GPU solver for coupled Aetherion fields.
+    GPU solver for coupled Aetherion fields with CPU fallback when CUDA is unavailable.
     """
 
-    def __init__(self, diffusion: float = 0.2, alpha: float = 0.3, beta: float = 0.2, I_scar: float = 1.0):
-        if cuda is None:
-            raise RuntimeError("CUDA/numba is required for CoupledAetherSolverGPU")
+    def __init__(self, diffusion: float = 0.2, alpha: float = 0.3, beta: float = 0.2, I_scar: float = 1.0, cpu_fallback=None):
         self.diffusion = diffusion
         self.alpha = alpha
         self.beta = beta
         self.I_scar = I_scar
+        self.gpu_enabled = cuda is not None
+        self.cpu_fallback = cpu_fallback or CoupledAetherSolverCPU(
+            diffusion=diffusion
+        )
 
     def step(self, sigma, kappa, ache, phi_x, phi_y, gamma_you, dt):
+        if not self.gpu_enabled:
+            return self.cpu_fallback.step(sigma, kappa, ache, phi_x, phi_y, gamma_you, dt)
+
         h, w = sigma.shape
         threads = (16, 16)
         blocks = ((w + threads[0] - 1) // threads[0], (h + threads[1] - 1) // threads[1])
