@@ -1,0 +1,37 @@
+version: 1
+name: continuity-universe-sdk
+description: 'Universe simulation SDK for Codex development.'
+
+permissions:
+  - allow: read
+    path: '/'
+  - allow: write
+    path: '/universe'
+  - allow: write
+    path: '/specs'
+  - allow: write
+    path: '/tasks'
+  - allow: write
+    path: '/tests'
+  - allow: write
+    path: '/dashboard'
+
+languages:
+  - python
+  - javascript
+
+frameworks:
+  - react
+  - node
+  - python
+
+commands:
+  run_engine: 'python universe/engine/universe_engine.py'
+  run_tests: 'pytest -q'
+
+workflow:
+  pr_on_completion: true
+  commit_message_template: '[Codex Universe Task] {{task_name}}'
+
+model:
+  use: 'gpt-4o'
