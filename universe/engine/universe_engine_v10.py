@@ -25,10 +25,16 @@ class UniverseEngineV10:
     def register_field(self, name, field):
         self.fields[name] = field
         return field
+    # Coupled Aetherion fields
+    def register_coupled_field(self, field):
+        self.coupled_fields.append(field)
+        return field
 
     def step(self, dt: float):
         # Update fields first
         for field in self.fields.values():
+            field.step(dt)
+        for field in self.coupled_fields:
             field.step(dt)
 
         self.gpu.upload(self.entities)
