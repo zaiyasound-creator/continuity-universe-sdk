@@ -17,11 +17,20 @@ class UniverseEngineV10:
         self.scheduler = GPUSchedulerV10(self.gpu, grid=None)
         self.replay = ReplayWriter(replay_path)
         self.step_counter = 0
+        self.fields = {}
 
     def add_entity(self, ent):
         self.entities[ent.id] = ent
 
+    def register_field(self, name, field):
+        self.fields[name] = field
+        return field
+
     def step(self, dt: float):
+        # Update fields first
+        for field in self.fields.values():
+            field.step(dt)
+
         self.gpu.upload(self.entities)
         state_hash = self.scheduler.step(dt)
         self._sync_back()
